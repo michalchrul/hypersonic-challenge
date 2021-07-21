@@ -462,15 +462,12 @@ class Bot {
 
             distances.clear();
             
-            int cnt = 0;
             for (auto iter = freePositions.begin(); iter != freePositions.end(); ++iter) {
                 Point p = *iter;
                 int distance = findShortestPath(playerPos, p); //calculate distances to all other free points
                 if (distance > min) { //min has to be greater than 0 (so point can be reached and is not current point)
                     distances.push_back(pair<Point, int>(p, distance));
                 }
-                cnt++;
-                if(cnt < 3)
                     break;
             }
 
