@@ -167,10 +167,11 @@ ostream & operator << (ostream & out, Point const pos) {
     return out << "x:" << pos.x << " y:" << pos.y;
 }
 
-vector<pair<Point, int> > sortByDmg(map<Point, int> M)
+vector<pair<Point, int> > sortByDmg(vector<pair<Point, int>> M)
 {
     vector<pair<Point, int>> A;
-    for (auto& it : M) {
+    
+    for (auto const& it : M) {
         A.push_back(it);
     }
     sort(A.begin(), A.end(), GreaterBySecond());
@@ -201,61 +202,47 @@ struct queueNode
 int rowNum[] = {-1, 0, 0, 1};
 int colNum[] = {0, -1, 1, 0};
 
-int BFS(int mat[][COL], Point src, Point dest)
+int BFS(vector<vector<int>> mat, Point src, Point dest)
 {
-    // check source and destination cell
-    // of the matrix have value 1
     if (!mat[src.x][src.y] || !mat[dest.x][dest.y])
         return -1;
- 
+
     bool visited[ROW][COL];
     memset(visited, false, sizeof visited);
-     
-    // Mark the source cell as visited
+    
     visited[src.x][src.y] = true;
- 
-    // Create a queue for BFS
+
     queue<queueNode> q;
-     
-    // Distance of source cell is 0
+
     queueNode s = {src, 0};
-    q.push(s);  // Enqueue source cell
- 
-    // Do a BFS starting from source cell
+    q.push(s);
+
     while (!q.empty())
     {
         queueNode curr = q.front();
         Point pt = curr.pt;
- 
-        // If we have reached the destination cell,
-        // we are done
+
         if (pt.x == dest.x && pt.y == dest.y)
             return curr.dist;
- 
-        // Otherwise dequeue the front
-        // cell in the queue
-        // and enqueue its adjacent cells
+
         q.pop();
- 
+
         for (int i = 0; i < 4; i++)
         {
             int row = pt.x + rowNum[i];
             int col = pt.y + colNum[i];
-             
-            // if adjacent cell is valid, has path and
-            // not visited yet, enqueue it.
-            if (isValid(row, col) && mat[row][col] &&
-               !visited[row][col])
+            Point p = {row, col};
+            
+            if (isValid(p) && mat[row][col] &&
+            !visited[row][col])
             {
-                // mark cell as visited and enqueue it
                 visited[row][col] = true;
                 queueNode Adjcell = { {row, col},
-                                      curr.dist + 1 };
+                                    curr.dist + 1 };
                 q.push(Adjcell);
             }
         }
     }
- 
     // Return -1 if destination cannot be reached
     return -1;
 }
@@ -272,7 +259,7 @@ class Bot {
         Point newPos;
         vector<vector<Cell> > field;
         vector<Point> freePositions;
-        map<Point, int> freePositionsMap;
+        vector<pair<Point, int>> damages;
         vector<pair<Point, int>> dmgSortedPositions;
         vector<pair<Point, int>> distSortedPositions;
         vector<Bomb> droppedBombs;
@@ -431,13 +418,13 @@ class Bot {
             field = turn.field;
             findFreePositions(); //get all non-occupied positions
 
-            freePositionsMap.clear();
+            damages.clear();
 
             for (auto iter = freePositions.begin(); iter != freePositions.end(); ++iter) {
                 int damageCount = calcDamageCount(*iter); // get damage count for each of them
-                freePositionsMap.insert(pair<Point, int>(*iter, damageCount));
+                damages.push_back(pair<Point, int>(*iter, damageCount));
             }  
-            dmgSortedPositions = sortByDmg(freePositionsMap); // sort them by damage count
+            dmgSortedPositions = sortByDmg(damages); // sort them by damage count
             
             Point playerPos;
             playerPos.x = player.x;
@@ -484,7 +471,7 @@ class Bot {
                     distances.push_back(pair<Point, int>(p, distance));
                 }
                 cnt++;
-                if(cnt < 3)
+                if(cnt < 1)
                     break;
             }
 
@@ -585,11 +572,11 @@ class Bot {
                     newPos = findBestCoordinates_dist(turn, 3);
                     currCommand = newCommand(player, newPos.x, newPos.y, action);
                 }
-                if (turnsCnt % 9 == 0) {
+                if (turnsCnt % 9 == 0 && !outputs.empty()) {
                     action = Action::bomb;
                     currCommand = newCommand(player,newPos.x, newPos.y, action);
                 }
-                if (turnsCnt % 10 == 0) {
+                if (turnsCnt % 10 == 0 && !outputs.empty()) {
                     action = Action::move;
                     newPos = findBestCoordinates_dist(turn, 3);
                     currCommand = newCommand(player, newPos.x, newPos.y, action);
@@ -623,7 +610,7 @@ int main()
     // game loop
     while (1) {
         Turn turn = { config }; cin >> turn;
-        Output output = bot.prepareOutput(turn);
+        Output output = bot.prepareOutput_B(turn);
         cout << output << endl;        
     }
 }
